@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌐 Hub de páginas</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #FFF5F7 0%, #FFE8EC 100%);
+    color: #4A3343; min-height: 100vh; padding: 30px 20px;
+  }
+  .hub {
+    max-width: 1100px; margin: 0 auto;
+    background: rgba(255,255,255,0.92);
+    border-radius: 24px; padding: 30px;
+    box-shadow: 0 12px 40px rgba(255,123,156,0.15);
+  }
+  h1 {
+    font-family: 'Dancing Script', cursive;
+    font-size: 3rem; color: #FF7B9C; text-align: center;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center; color: #7A6174; font-weight: 600;
+    margin-bottom: 26px; font-size: 1rem;
+  }
+  .filtro-usuarios {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 22px;
+  }
+  .filtro-btn {
+    padding: 7px 18px; border-radius: 30px;
+    border: 1.5px solid #FFB6C1; background: white;
+    color: #7A6174; font-family: 'Nunito', sans-serif;
+    font-weight: 800; font-size: 0.85rem; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filtro-btn:hover { background: #FFF0F3; }
+  .filtro-btn.active {
+    background: linear-gradient(135deg, #FF7B9C, #FFB6C1);
+    color: white; border-color: transparent;
+    box-shadow: 0 4px 14px rgba(255,123,156,0.3);
+  }
+  .grid {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+  .card {
+    background: white; border: 1.5px solid #FFB6C1;
+    border-radius: 16px; padding: 18px;
+    text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; gap: 6px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(255,123,156,0.08);
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(255,123,156,0.2);
+    border-color: #FF7B9C;
+  }
+  .card-titulo {
+    font-weight: 800; font-size: 1.05rem;
+    color: #4A3343; line-height: 1.3;
+  }
+  .card-autor {
+    font-size: 0.78rem; color: #7A6174; font-weight: 600;
+  }
+  .card-fecha {
+    font-size: 0.68rem; color: #B89AA8;
+    margin-top: auto; padding-top: 8px;
+    border-top: 1px solid #FFF0F3;
+  }
+  .vacio {
+    text-align: center; padding: 60px 20px;
+    color: #B89AA8; font-size: 0.95rem;
+  }
+  .footer {
+    text-align: center; margin-top: 30px;
+    color: #B89AA8; font-size: 0.72rem;
+  }
+</style>
+</head>
+<body>
+<div class="hub">
+  <h1>🌐 Hub de páginas</h1>
+  <div class="subtitle">Páginas creadas con WebMaker y publicadas con TpGit</div>
+  <div class="filtro-usuarios" id="filtros"></div>
+  <div class="grid" id="grid"></div>
+  <div class="footer">Hecho con 🌸 SillyStudio</div>
+</div>
+<script>
+  let paginas = [];
+  let filtro = 'todos';
+  async function cargar() {
+    try {
+      const res = await fetch('./paginas.json?t=' + Date.now());
+      const data = await res.json();
+      paginas = data.paginas || [];
+    } catch (e) { paginas = []; }
+    renderFiltros();
+    renderGrid();
+  }
+  function renderFiltros() {
+    const cont = document.getElementById('filtros');
+    const usuarios = [...new Set(paginas.map(p => p.usuarioNombre || p.usuario || 'Anónimo'))];
+    cont.innerHTML = '<button class="filtro-btn active" data-user="todos">👥 Todos</button>';
+    usuarios.forEach(u => {
+      const btn = document.createElement('button');
+      btn.className = 'filtro-btn';
+      btn.dataset.user = u;
+      btn.textContent = '👤 ' + u;
+      cont.appendChild(btn);
+    });
+    cont.querySelectorAll('.filtro-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        cont.querySelectorAll('.filtro-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        filtro = b.dataset.user;
+        renderGrid();
+      });
+    });
+  }
+  function renderGrid() {
+    const grid = document.getElementById('grid');
+    const filtradas = filtro === 'todos'
+      ? paginas
+      : paginas.filter(p => (p.usuarioNombre || p.usuario) === filtro);
+    if (filtradas.length === 0) {
+      grid.innerHTML = '<div class="vacio" style="grid-column:1/-1;">📭 Aún no hay páginas publicadas.</div>';
+      return;
+    }
+    grid.innerHTML = '';
+    filtradas.forEach(p => {
+      const a = document.createElement('a');
+      a.className = 'card';
+      a.href = p.link || ('./' + p.archivoRepo);
+      a.target = '_blank';
+      const fecha = new Date(p.fecha).toLocaleDateString('es-CL', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+      a.innerHTML = `
+        <div class="card-titulo">${p.titulo || 'Sin título'}</div>
+        <div class="card-autor">👤 ${p.usuarioNombre || p.usuario || 'Anónimo'}</div>
+        <div class="card-fecha">📅 ${fecha}</div>
+      `;
+      grid.appendChild(a);
+    });
+  }
+  cargar();
+</script>
+</body>
+</html>
